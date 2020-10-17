@@ -35,7 +35,9 @@ class Configs:
             for item in labels_colors_list:
                 splited = item.split()
                 if not splited[0] in self.labels_colors.keys():
-                    self.labels_colors[splited[0]] = (splited[1].split(",")).astype("int")
+                    values = (splited[1].split(","))
+                    values = [int(item) for item in values]
+                    self.labels_colors[splited[0]] = values
             del(labels_colors_list)
 
     def getKeys(self):
@@ -87,22 +89,11 @@ class Box:
         )
     
 def driverFunction(
-    labelConfPath,configPath,weightPath,imagePath,MIN_CONF,nms_conf, nms_thresh
-):
-    
-    # conf = Configs(labelConfPath)
-    # labels = conf.getKeys()
-    labels = ["person","bicycle","car","motorcycle","airplane","bus","train","truck","boat",
-                "trafficlight","firehydrant","stopsign","parkingmeter","bench","bird","cat",
-                "dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack",
-                "umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sportsball",
-                "kite","baseballbat","baseballglove","skateboard","surfboard","tennisracket",
-                "bottle","wineglass","cup","fork","knife","spoon","bowl","banana","apple",
-                "sandwich","orange","broccoli","carrot","hotdog","pizza","donut","cake","chair",
-                "sofa","pottedplant","bed","diningtable","toilet","tvmonitor","laptop","mouse",
-                "remote","keyboard","cellphone","microwave","oven","toaster","sink","refrigerator",
-                "book","clock","vase","scissors","teddybear","hairdrier","toothbrush"]
+    labelConfPath,configPath,weightPath,imagePath,MIN_CONF,nms_conf, nms_thresh ):
 
+    detections = []
+    conf = Configs(labelConfPath)
+    labels = conf.getKeys()
 
     model = YoloModelPrediction(configPath,weightPath,imagePath)
     detection_layers = model.obj_det_layers()
@@ -127,7 +118,7 @@ def driverFunction(
         [list(item.getBoxDims()) for item in boxes_list],
         confidences_list, nms_conf, nms_thresh
     )
-    
+
     image = cv2.imread(imagePath)
 
     # the cv2 fn will perform nms and get index of box with greatest confidence per class
@@ -138,17 +129,12 @@ def driverFunction(
         end_x_pt ,end_y_pt = boxes_list[greatest_confidence_id].generateEnds()
 
         predicted_class_id = class_ids_list[greatest_confidence_id]
-        # box_color = conf.getColor(predicted_class_label)
-        box_color = [250,30,0]
-
+        box_color = conf.getColor(labels[predicted_class_id])
+        
         predicted_class_label = "{}: {:.2f}%".format(labels[predicted_class_id], confidences_list[greatest_confidence_id] * 100)
-        # print("predicted object {}".format(predicted_class_label))
+        detections.append((labels[predicted_class_id], confidences_list[greatest_confidence_id]))
 
         cv2.rectangle(image, (start_x_pt, start_y_pt), (end_x_pt, end_y_pt), box_color,1)
         cv2.putText(image, predicted_class_label, (start_x_pt, start_y_pt-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1)
     
-    cv2.imwrite("Detection.jpg", image)
-
-# driverFunction(
-#     "","yolov4.cfg","yolov4.weights","test.jpg",0.4,0.5,0.4
-# )
+    return image,detections
