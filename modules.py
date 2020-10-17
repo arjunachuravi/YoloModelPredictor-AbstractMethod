@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 class Image:
 
@@ -60,6 +60,9 @@ class YoloModelPrediction(Image):
     def obj_det_layers(self):
         return self.yolo_model.forward(self.yolo_output_layer)
 
+    def inputImgDim(self):
+        return self.DIMS
+
 class Box:
 
     def __init__(self,boundaryBox,imageDims):
@@ -70,12 +73,18 @@ class Box:
 
     def getBoxDims(self):
         # co ordinate start_x,start_y,w,h
-        return [
+        return (
             int(self.boundaryBox[0] - (self.boundaryBox[2] / 2)),
             int(self.boundaryBox[1] - (self.boundaryBox[3] / 2)),
             self.boundaryBox[2],
             self.boundaryBox[3]
-        ]
+        )
+    
+    def generateEnds(self):
+        return (
+            int(self.boundaryBox[0] + self.boundaryBox[2]),
+            int(self.boundaryBox[1] + self.boundaryBox[3])
+        )
     
 def driverFunction(
     labelConfPath,configPath,weightPath,imagePath,MIN_CONF,nms_conf, nms_thresh
@@ -109,42 +118,37 @@ def driverFunction(
             confidence = scores[c_id]
 
             if confidence > MIN_CONF:
-                box = Box(obj_feature[:4],model.DIMS)
-                boxes_list.append(box.getBoxDims())
-                del(box)
+                # sync-data-struct
+                boxes_list.append(Box(obj_feature[:4],model.inputImgDim()))
                 confidences_list.append(float(confidence))
                 class_ids_list.append(c_id)
     
-    max_value_ids = cv2.dnn.NMSBoxes(boxes_list, confidences_list, nms_conf, nms_thresh)
+    max_value_ids = cv2.dnn.NMSBoxes(
+        [list(item.getBoxDims()) for item in boxes_list],
+        confidences_list, nms_conf, nms_thresh
+    )
+    
     image = cv2.imread(imagePath)
 
+    # the cv2 fn will perform nms and get index of box with greatest confidence per class
     for max_valueid in max_value_ids:
 
-        max_class_id = max_valueid[0]
+        greatest_confidence_id = max_valueid[0]
+        start_x_pt ,start_y_pt ,box_width ,box_height = boxes_list[greatest_confidence_id].getBoxDims()
+        end_x_pt ,end_y_pt = boxes_list[greatest_confidence_id].generateEnds()
 
-        box = boxes_list[max_class_id]
-        start_x_pt = box[0]
-        start_y_pt = box[1]
-        box_width = box[2]
-        box_height = box[3]
-
-        predicted_class_id = class_ids_list[max_class_id]
-        predicted_class_label = labels[predicted_class_id]
-        prediction_confidence = confidences_list[max_class_id]
+        predicted_class_id = class_ids_list[greatest_confidence_id]
         # box_color = conf.getColor(predicted_class_label)
+        box_color = [250,30,0]
 
-        end_x_pt = int(start_x_pt + box_width)
-        end_y_pt = int(start_y_pt + box_height)
+        predicted_class_label = "{}: {:.2f}%".format(labels[predicted_class_id], confidences_list[greatest_confidence_id] * 100)
+        # print("predicted object {}".format(predicted_class_label))
 
-
-        predicted_class_label = "{}: {:.2f}%".format(predicted_class_label, prediction_confidence * 100)
-        print("predicted object {}".format(predicted_class_label))
-
-        cv2.rectangle(image, (start_x_pt, start_y_pt), (end_x_pt, end_y_pt), [250,30,0],1)
-        cv2.putText(image, predicted_class_label, (start_x_pt, start_y_pt-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, [250,30,0], 1)
+        cv2.rectangle(image, (start_x_pt, start_y_pt), (end_x_pt, end_y_pt), box_color,1)
+        cv2.putText(image, predicted_class_label, (start_x_pt, start_y_pt-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1)
     
     cv2.imwrite("Detection.jpg", image)
 
-driverFunction(
-    "","yolov4.cfg","yolov4.weights","test.jpg",0.4,0.5,0.4
-)
+# driverFunction(
+#     "","yolov4.cfg","yolov4.weights","test.jpg",0.4,0.5,0.4
+# )
