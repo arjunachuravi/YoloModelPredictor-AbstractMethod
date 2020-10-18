@@ -4,7 +4,6 @@ import numpy as np
 import json
 import urllib
 import PIL.Image as Image
-from sklearn.model_selection import train_test_split
 import urllib.request as req
 
 clothing = []
@@ -18,6 +17,11 @@ for c in clothing:
     categories.extend(a['label'])
 categories = list(set(categories))
 categories.sort()
+
+with open("labelfile_train.txt","w") as file:
+  for item in categories:
+    f.write(item + " " + "255,245,230")
+
 
 def create_dataset(clothing, categories):
   images_path = Path(f"trainingData/images")
