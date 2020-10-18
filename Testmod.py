@@ -1,8 +1,8 @@
-from modules import driverFunction
+from modules import driverTestingFunction
 import cv2
 import numpy as np
 
-image,detections = driverFunction(
+image,detections = driverTestingFunction(
     'labelfile.txt',
     'yolov4.cfg',
     'yolov4.weights',

@@ -88,7 +88,7 @@ class Box:
             int(self.boundaryBox[1] + self.boundaryBox[3])
         )
     
-def driverFunction(
+def driverTestingFunction(
     labelConfPath,configPath,weightPath,imagePath,MIN_CONF,nms_conf, nms_thresh ):
 
     detections = []
@@ -96,18 +96,18 @@ def driverFunction(
     labels = conf.getKeys()
 
     model = YoloModelPrediction(configPath,weightPath,imagePath)
-    detection_layers = model.obj_det_layers()
 
     class_ids_list = []
     boxes_list = []
     confidences_list = []
 
-    for detection_layer in detection_layers:
+    for detection_layer in model.obj_det_layers():
         for obj_feature in detection_layer:
             scores = obj_feature[5:]
             c_id = np.argmax(scores)
             confidence = scores[c_id]
-
+            del(scores)
+            
             if confidence > MIN_CONF:
                 # sync-data-struct
                 boxes_list.append(Box(obj_feature[:4],model.inputImgDim()))
@@ -118,8 +118,6 @@ def driverFunction(
         [list(item.getBoxDims()) for item in boxes_list],
         confidences_list, nms_conf, nms_thresh
     )
-
-    image = cv2.imread(imagePath)
 
     # the cv2 fn will perform nms and get index of box with greatest confidence per class
     for max_valueid in max_value_ids:
@@ -134,7 +132,7 @@ def driverFunction(
         predicted_class_label = "{}: {:.2f}%".format(labels[predicted_class_id], confidences_list[greatest_confidence_id] * 100)
         detections.append((labels[predicted_class_id], confidences_list[greatest_confidence_id]))
 
-        cv2.rectangle(image, (start_x_pt, start_y_pt), (end_x_pt, end_y_pt), box_color,1)
-        cv2.putText(image, predicted_class_label, (start_x_pt, start_y_pt-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1)
+        cv2.rectangle(model.IMAGE, (start_x_pt, start_y_pt), (end_x_pt, end_y_pt), box_color,1)
+        cv2.putText(model.IMAGE, predicted_class_label, (start_x_pt, start_y_pt-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1)
     
-    return image,detections
+    return model.IMAGE,detections
