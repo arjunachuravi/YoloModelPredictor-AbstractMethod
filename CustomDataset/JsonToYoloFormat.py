@@ -7,7 +7,7 @@ import PIL.Image as Image
 import urllib.request as req
 
 clothing = []
-with open("CustomDataset\clothing.json") as f:
+with open("clothing.json") as f:
     for line in f:
         clothing.append(json.loads(line))
 
@@ -20,7 +20,7 @@ categories.sort()
 
 with open("labelfile_train.txt","w") as file:
   for item in categories:
-    f.write(item + " " + "255,245,230\n")
+    file.write(item + " " + "255,245,230\n")
 
 
 def create_dataset(clothing, categories):
