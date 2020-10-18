@@ -1,0 +1,9 @@
+Jackets 255,245,230
+Jeans 255,245,230
+Shirts 255,245,230
+Shoes 255,245,230
+Skirts 255,245,230
+Tops 255,245,230
+Trousers 255,245,230
+Tshirts 255,245,230
+sunglasses 255,245,230
