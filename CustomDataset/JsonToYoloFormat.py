@@ -5,13 +5,12 @@ import json
 import urllib
 import PIL.Image as Image
 from sklearn.model_selection import train_test_split
+import urllib.request as req
 
 clothing = []
-with open("clothing.json") as f:
+with open("CustomDataset\clothing.json") as f:
     for line in f:
         clothing.append(json.loads(line))
-print(len(clothing))
-print(clothing[0])
 
 categories = []
 for c in clothing:
@@ -19,19 +18,15 @@ for c in clothing:
     categories.extend(a['label'])
 categories = list(set(categories))
 categories.sort()
-print(categories)
 
-train_clothing, val_clothing = train_test_split(clothing, test_size=0.2)
-
-
-def create_dataset(clothing, categories, dataset_type):
-  images_path = Path(f"clothing/images/{dataset_type}")
+def create_dataset(clothing, categories):
+  images_path = Path(f"trainingData/images")
   images_path.mkdir(parents=True, exist_ok=True)
-  labels_path = Path(f"clothing/labels/{dataset_type}")
+  labels_path = Path(f"trainingData/labels")
   labels_path.mkdir(parents=True, exist_ok=True)
   for img_id, row in enumerate(tqdm(clothing)):
     image_name = f"{img_id}.jpeg"
-    img = urllib.request.urlopen(row["content"])
+    img = req.urlopen(row["content"])
     img = Image.open(img)
     img = img.convert("RGB")
     img.save(str(images_path / image_name), "JPEG")
@@ -51,5 +46,4 @@ def create_dataset(clothing, categories, dataset_type):
           )
           
 
-create_dataset(train_clothing, categories, 'train')
-create_dataset(val_clothing, categories, 'val')
+create_dataset(clothing, categories)
