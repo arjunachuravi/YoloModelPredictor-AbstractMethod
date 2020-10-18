@@ -2,3 +2,9 @@
 __pycache__/*
 filexyz.jpg
 test.jpg
+trainingData/*
+labelfile_train.txt
+cov.data
+labels.names
+testing.txt
+training.txt
