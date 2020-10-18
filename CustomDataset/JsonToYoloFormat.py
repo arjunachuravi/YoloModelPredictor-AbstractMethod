@@ -20,7 +20,7 @@ categories.sort()
 
 with open("labelfile_train.txt","w") as file:
   for item in categories:
-    f.write(item + " " + "255,245,230")
+    f.write(item + " " + "255,245,230\n")
 
 
 def create_dataset(clothing, categories):
