@@ -7,7 +7,7 @@ import PIL.Image as Image
 import urllib.request as req
 
 clothing = []
-with open("clothing.json") as f:
+with open("CustomDataset\clothing.json") as f:
     for line in f:
         clothing.append(json.loads(line))
 
